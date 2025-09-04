@@ -100,22 +100,22 @@ Make sure to set your Supabase + Stripe environment variables in the hosting das
 ## 📸 Screenshots
 
 ### 🏠 Home Page
-![Home](./home.png)
+![Home](./public/home.png)
 
 ### 📋 Menu Page
-![Menu](./menu.png)
+![Menu](./public/menu.png)
 
 ### 🛒 Checkout Page
-![Checkout](./checkout.png)
+![Checkout](./public/checkout.png)
 
 ### 📦 Orders Page
-![Orders](./orders.png)
+![Orders](./public/orders.png)
 
 ### 👤 Profile Page
-![Profile](./profile.png)
+![Profile](./public/profile.png)
 
 ### 🛠 Admin Dashboard
-![Admin](./admin.png)
+![Admin](./public/admin.png)
 
 ---
 
