@@ -99,27 +99,27 @@ Make sure to set your Supabase + Stripe environment variables in the hosting das
 
 ## Screenshots
 
-### 🏠 Home Page
+### Home Page
 ![Home](./public/home.png)
 
-### 📋 Menu Page
+### Menu Page
 ![Menu](./public/menu.png)
 
-### 🛒 Checkout Page
+### Checkout Page
 ![Checkout](./public/checkout.png)
 
-### 📦 Orders Page
+### Orders Page
 ![Orders](./public/orders.png)
 
-### 👤 Profile Page
+### Profile Page
 ![Profile](./public/profile.png)
 
-### 🛠 Admin Dashboard
+### Admin Dashboard
 ![Admin](./public/admin.png)
 
 ---
 
-## 💡 Future Improvements
+## Future Improvements
 
 - Add table bookings
 - Add product reviews
