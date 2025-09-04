@@ -5,18 +5,18 @@ Order ahead, manage bookings, track orders, and explore a clean admin dashboard 
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔐 **Authentication** – Supabase magic links (email sign-in), with profile editing.
-- 🛒 **Cart & Checkout** – Add items, checkout securely via Stripe.
-- 📋 **Orders** – View your recent orders, with live status updates.
-- 👤 **Profile** – Update your name, view order history, manage your session.
-- 🛠 **Admin Dashboard** – View and filter all orders (paid, pending, failed, refunded).
-- 📱 **Responsive UI** – Clean, mobile-friendly design with TailwindCSS + Lucide icons.
+- **Authentication** – Supabase magic links (email sign-in), with profile editing.
+- **Cart & Checkout** – Add items, checkout securely via Stripe.
+- **Orders** – View your recent orders, with live status updates.
+- **Profile** – Update your name, view order history, manage your session.
+- **Admin Dashboard** – View and filter all orders (paid, pending, failed, refunded).
+- **Responsive UI** – Clean, mobile-friendly design with TailwindCSS + Lucide icons.
 
 ---
 
-## 🏗 Tech Stack
+## Tech Stack
 
 - [Next.js 15](https://nextjs.org/) (App Router + Turbopack)
 - [Supabase](https://supabase.com/) (Auth, Database, API)
@@ -27,7 +27,7 @@ Order ahead, manage bookings, track orders, and explore a clean admin dashboard 
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 src/
@@ -47,7 +47,7 @@ src/
 
 ---
 
-## ⚡️ Getting Started
+## Getting Started
 
 1. **Clone the repo**
    ```bash
@@ -81,7 +81,7 @@ src/
 
 ---
 
-## 🧪 Testing Payments
+## Testing Payments
 
 - This project uses **Stripe test mode**.
 - Use [Stripe test cards](https://stripe.com/docs/testing) like:
@@ -90,14 +90,14 @@ src/
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 Deploy easily on [Vercel](https://vercel.com/) or [Netlify](https://www.netlify.com/).  
 Make sure to set your Supabase + Stripe environment variables in the hosting dashboard.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### 🏠 Home Page
 ![Home](./public/home.png)
@@ -123,7 +123,6 @@ Make sure to set your Supabase + Stripe environment variables in the hosting das
 
 - Add table bookings
 - Add product reviews
-- Multi-store / branches support
 - Email receipts
 
 ---

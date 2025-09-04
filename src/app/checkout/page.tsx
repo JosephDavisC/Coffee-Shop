@@ -1,134 +1,129 @@
+// src/app/checkout/page.tsx
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useCart } from '@/store/cart'
 import { formatCurrency } from '@/lib/format'
 import { Button } from '@/components/ui/button'
+import { v4 as uuidv4 } from 'uuid'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-function CheckoutForm({
-  clientSecret,
-  orderId,
-  amountCents,
-}: {
-  clientSecret: string
-  orderId: string
-  amountCents: number
-}) {
+// ------- Small order summary -------
+function Summary() {
+  const items = useCart(s => s.items)
+  const subtotal = useCart(s => s.subtotal)()
+  if (!items.length) return null
+  // If your formatCurrency wants a currency, you can use:
+  // const currency = items[0]?.currency ?? 'usd'
+  return (
+    <div className="rounded border bg-white/70 p-4 text-sm">
+      <div className="mb-2 font-medium">Your order</div>
+      <ul className="space-y-1">
+        {items.map(i => (
+          <li key={i.id} className="flex justify-between">
+            <span className="truncate">{i.name} × {i.qty}</span>
+            <span>{formatCurrency(i.price_cents * i.qty /*, i.currency*/)}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 border-t pt-2 flex justify-between font-medium">
+        <span>Total</span>
+        <span>{formatCurrency(subtotal /*, currency*/)}</span>
+      </div>
+    </div>
+  )
+}
+
+// ------- Stripe form -------
+function CheckoutForm({ orderId }: { orderId: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const clear = useCart(s => s.clear)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handlePay = async () => {
+  const onPay = async () => {
     if (!stripe || !elements) return
-    setLoading(true)
-    setError(null)
-
-    const { error: payErr } = await stripe.confirmPayment({
+    setLoading(true); setError(null)
+    const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/orders/thanks?order=${orderId}`,
-      },
-      // behavior: 'redirect_if_required' // default — fine to omit
+      confirmParams: { return_url: `${window.location.origin}/orders/thanks?order=${orderId}` },
     })
-
-    // If Stripe returns an immediate error (validation, card error, etc.)
-    if (payErr) {
-      setError(payErr.message ?? 'Payment error')
-    } else {
-      // If no redirect was needed and payment completed synchronously,
-      // we can clear the cart now. If a redirect happens, we’ll land
-      // on /orders/thanks and won’t execute this line anyway.
-      clear()
-    }
-
+    if (error) setError(error.message ?? 'Payment error')
+    // Clear locally after handing off to Stripe (webhook updates order to "paid")
+    clear()
     setLoading(false)
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-6">
-      <div className="text-sm text-muted-foreground">
-        Pay {formatCurrency(amountCents, 'usd')}
-      </div>
+    <div className="space-y-4">
       <PaymentElement />
-      {error && <div className="text-sm text-red-500">{error}</div>}
-      <Button className="w-full" onClick={handlePay} disabled={!stripe || loading}>
+      {error && <div className="text-sm text-red-600">{error}</div>}
+      <Button onClick={onPay} disabled={!stripe || loading} className="w-full">
         {loading ? 'Processing…' : 'Pay now'}
       </Button>
     </div>
   )
 }
 
+// ------- Page -------
 export default function CheckoutPage() {
   const items = useCart(s => s.items)
-  const subtotalCents = useCart(s => s.subtotal)() // <- ensure this returns cents
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<string | null>(null)
   const appearance = useMemo(() => ({ theme: 'stripe' as const }), [])
 
+  // Prevent duplicate POST in dev (React Strict Mode double-mount)
+  const startedRef = useRef(false)
+
   useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
+
     const start = async () => {
       setLoadErr(null)
-
-      if (!items.length) {
-        setLoadErr('Cart is empty')
-        return
-      }
-
-      // Coerce subtotal to integer cents just in case
-      const amount_cents = Math.round(Number(subtotalCents || 0))
-      if (!Number.isFinite(amount_cents) || amount_cents <= 0) {
-        setLoadErr('Missing or invalid amount_cents')
-        return
-      }
-
+      if (!items.length) { setLoadErr('Cart is empty'); return }
       try {
+        // Send an idempotency seed so the server can return the same order/PI
+        const clientRequestId = uuidv4()
+
         const res = await fetch('/api/stripe/create-payment-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount_cents,      // <-- what the API expects
-            currency: 'usd',
-            // order_id: existingIdIfYouHaveOne
+            clientRequestId,
+            items: items.map(i => ({ id: i.id, qty: i.qty })),
           }),
         })
-
         const data = await res.json()
-
         if (!res.ok) {
-          console.error('PI create failed:', data)
-          setLoadErr(data?.error ?? 'Failed to create payment')
+          setLoadErr(data?.error ?? 'Failed to start checkout')
           return
         }
-
-        // Your API returns `client_secret` and (optionally) `order_id`
-        setClientSecret(data.client_secret)
-        setOrderId(data.order_id ?? null)
+        setClientSecret(data.clientSecret)
+        setOrderId(data.orderId)
       } catch (e: any) {
-        console.error(e)
         setLoadErr(e?.message ?? 'Network error')
       }
     }
 
     start()
-  }, [items, subtotalCents])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // run exactly once per mount
 
-  if (loadErr) return <div className="p-6 text-sm text-red-500">{loadErr}</div>
-  if (!clientSecret) return <div className="p-6 text-sm text-muted-foreground">Preparing checkout…</div>
+  if (loadErr) return <div className="p-6 text-sm text-red-600">{loadErr}</div>
+  if (!clientSecret || !orderId) return <div className="p-6 text-sm text-zinc-500">Preparing checkout…</div>
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-      <CheckoutForm
-        clientSecret={clientSecret}
-        orderId={orderId ?? 'unknown'}
-        amountCents={Math.round(Number(subtotalCents || 0))}
-      />
-    </Elements>
+    <div className="mx-auto grid max-w-4xl gap-6 p-6 md:grid-cols-2">
+      <Summary />
+      <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+        <CheckoutForm orderId={orderId} />
+      </Elements>
+    </div>
   )
 }

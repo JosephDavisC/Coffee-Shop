@@ -1,69 +1,70 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { getStripe } from '@/lib/stripe'
+import Stripe from 'stripe'
+import { createSupabaseServer } from '@/lib/supabase/server'
 
-export const runtime = 'nodejs' // raw body support
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
 
 export async function POST(req: Request) {
-  const stripe = getStripe()
-  const sig = (await headers()).get('stripe-signature')
+  const sig = req.headers.get('stripe-signature')
+  if (!sig) {
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
+  }
+
+  let event: Stripe.Event
   const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!sig || !secret) {
-    console.error('Missing STRIPE_WEBHOOK_SECRET or signature header')
-    return new NextResponse('Missing webhook config', { status: 400 })
+  if (!secret) {
+    return NextResponse.json({ error: 'Missing STRIPE_WEBHOOK_SECRET' }, { status: 500 })
   }
 
-  const raw = await req.text()
-
-  let event
+  // Raw body needed for verification
+  const rawBody = await req.text()
   try {
-    event = stripe.webhooks.constructEvent(raw, sig, secret)
+    event = stripe.webhooks.constructEvent(rawBody, sig, secret)
   } catch (err: any) {
-    console.error('Webhook signature error:', err?.message)
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
+    console.error('[webhook] signature verify failed:', err?.message)
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
 
-  try {
-    console.log('[stripe:webhook] event:', event.type)
+  // We only need to update orders on these events
+  if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed') {
+    const pi = event.data.object as Stripe.PaymentIntent
+    const supabase = await createSupabaseServer()
 
-    if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed') {
-      const pi: any = event.data.object
-      const orderId: string | undefined = pi?.metadata?.order_id
-      const status = event.type === 'payment_intent.succeeded' ? 'paid' : 'failed'
-
-      console.log('[stripe:webhook] PI:', pi?.id, 'order_id:', orderId, '->', status)
-
-      let update
-      if (orderId) {
-        update = await supabaseAdmin
+    try {
+      if (event.type === 'payment_intent.succeeded') {
+        // Mark the order paid by PI id
+        const { error } = await supabase
           .from('orders')
-          .update({
-            status,
-            payment_intent_id: pi.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', orderId)
-        } else {
-        update = await supabaseAdmin
-          .from('orders')
-          .update({
-            status,
-            updated_at: new Date().toISOString(),
-          })
+          .update({ status: 'paid', updated_at: new Date().toISOString() })
           .eq('payment_intent_id', pi.id)
-      }
 
-      if (update.error) {
-        console.error('[stripe:webhook] Supabase update error:', update.error)
-        return NextResponse.json({ received: true, update: 'error' })
+        if (error) {
+          console.error('[webhook] update paid error:', error)
+          return NextResponse.json({ received: true, warn: 'db-update-failed' })
+        }
+        console.log('[webhook] order marked paid for PI', pi.id)
+      } else {
+        // Optional: mark failed
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'failed', updated_at: new Date().toISOString() })
+          .eq('payment_intent_id', pi.id)
+
+        if (error) console.error('[webhook] update failed error:', error)
+        console.log('[webhook] order marked failed for PI', pi.id)
       }
-      console.log('[stripe:webhook] Supabase updated rows:', update.count ?? 'n/a')
+    } catch (e) {
+      console.error('[webhook] db exception:', e)
     }
-
-    return NextResponse.json({ received: true })
-  } catch (err) {
-    console.error('[stripe:webhook] handler failure:', err)
-    return NextResponse.json({ error: 'handler failure' }, { status: 500 })
   }
+
+  return NextResponse.json({ received: true })
 }
+
+// Needed so Next doesn’t parse the body (we need raw for Stripe)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+} as any
