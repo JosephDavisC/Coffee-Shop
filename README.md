@@ -51,7 +51,7 @@ src/
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/yourusername/coffee-shop.git
+   git clone https://github.com/JosephDavisC/coffee-shop.git
    cd coffee-shop
    ```
 
