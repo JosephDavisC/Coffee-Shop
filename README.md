@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ☕ Coffee Shop – Fullstack Demo
 
-## Getting Started
+A modern coffee shop web app built with **Next.js 15 (App Router)**, **Supabase**, and **Stripe**.  
+Order ahead, manage bookings, track orders, and explore a clean admin dashboard — all with magic link authentication.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Features
+
+- 🔐 **Authentication** – Supabase magic links (email sign-in), with profile editing.
+- 🛒 **Cart & Checkout** – Add items, checkout securely via Stripe.
+- 📋 **Orders** – View your recent orders, with live status updates.
+- 👤 **Profile** – Update your name, view order history, manage your session.
+- 🛠 **Admin Dashboard** – View and filter all orders (paid, pending, failed, refunded).
+- 📱 **Responsive UI** – Clean, mobile-friendly design with TailwindCSS + Lucide icons.
+
+---
+
+## 🏗 Tech Stack
+
+- [Next.js 15](https://nextjs.org/) (App Router + Turbopack)
+- [Supabase](https://supabase.com/) (Auth, Database, API)
+- [Stripe](https://stripe.com/) (Payments & webhooks)
+- [Tailwind CSS](https://tailwindcss.com/) (UI styling)
+- [Lucide React](https://lucide.dev/) (icons)
+- [Sonner](https://sonner.emilkowal.ski/) (toast notifications)
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+ ├─ app/
+ │   ├─ admin/         # Admin dashboard
+ │   ├─ api/           # API routes (Stripe, profile, orders, etc.)
+ │   ├─ checkout/      # Checkout flow
+ │   ├─ login/         # Magic link sign-in
+ │   ├─ orders/        # User orders
+ │   ├─ profile/       # Profile page + form
+ │   └─ (auth)/callback # Auth callback handler
+ │
+ ├─ components/        # UI components (navbar, cards, etc.)
+ ├─ lib/               # Supabase, utils, formatting
+ └─ public/            # Static assets (hero image, favicon, etc.)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚡️ Getting Started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/yourusername/coffee-shop.git
+   cd coffee-shop
+   ```
 
-## Learn More
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Set up environment variables**  
+   Create a `.env.local` file with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   STRIPE_SECRET_KEY=sk_test_123...
+   STRIPE_WEBHOOK_SECRET=whsec_123...
+   ```
 
-## Deploy on Vercel
+4. **Run the dev server**
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   App will be available at: **http://localhost:3000**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🧪 Testing Payments
+
+- This project uses **Stripe test mode**.
+- Use [Stripe test cards](https://stripe.com/docs/testing) like:
+  - `4242 4242 4242 4242` (Visa – succeeds)
+  - `4000 0000 0000 9995` (declined)
+
+---
+
+## 🚀 Deployment
+
+Deploy easily on [Vercel](https://vercel.com/) or [Netlify](https://www.netlify.com/).  
+Make sure to set your Supabase + Stripe environment variables in the hosting dashboard.
+
+---
+
+## 📸 Screenshots
+
+### 🏠 Home Page
+![Home](./home.png)
+
+### 📋 Menu Page
+![Menu](./menu.png)
+
+### 🛒 Checkout Page
+![Checkout](./checkout.png)
+
+### 📦 Orders Page
+![Orders](./orders.png)
+
+### 👤 Profile Page
+![Profile](./profile.png)
+
+### 🛠 Admin Dashboard
+![Admin](./admin.png)
+
+---
+
+## 💡 Future Improvements
+
+- Add table bookings
+- Add product reviews
+- Multi-store / branches support
+- Email receipts
+
+---
